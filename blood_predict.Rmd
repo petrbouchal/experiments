@@ -1,0 +1,48 @@
+---
+title: "predict"
+output: html_document
+---
+
+www.drivendata.org/competitions/2/
+
+```{r}
+
+# library(pscl)
+
+```
+
+
+``` {r}
+tr <- read.csv('blood-testset.csv')
+names(tr) <- c('id',"months_last","number","volume","months_first","outcome")
+summary(tr)
+length(unique(tr$id)) == nrow(tr)
+```
+
+```{r}
+tr$volume <- NULL # this var correlates perfectly with var number
+tr$duration <- tr$months_first - tr$months_last
+tr$howoften <- tr$duration/tr$number
+tr$delta <- tr$howoften - tr$months_last
+```
+
+``` {r}
+
+formula <- 'outcome ~ months_last + delta + number'
+
+model <- glm(formula, data=tr, family=binomial)
+summary(model)
+exp(cbind(coef(model), confint(model)))
+
+tr$predicted <- predict.glm(model, newdata=tr,type = 'response')
+tr$predictedb <- ifelse(tr$predicted < .5, 0, 1)
+
+table(tr$outcome)
+table(tr$predictedb)
+
+addmargins(ftable(tr$outcome, tr$predictedb))
+
+mean(tr$outcome)
+mean(tr$predictedb)
+
+```
