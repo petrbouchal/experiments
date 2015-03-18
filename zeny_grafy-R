@@ -1,0 +1,24 @@
+ver2014 <- read.csv("C:/Users/boupet/Desktop/firmy2.csv", encoding="UTF8")
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+ver2014s <- ver2014 %>%
+  group_by(typfirmy) %>% 
+  summarise(dr_podil=mean(dr_podil/100, na.rm=T),
+            p_podil=mean(p_podil/100, na.rm = T))
+
+ver2014hist <- ver2014 %>% 
+  group_by(typfirmy) %>% 
+  mutate(dr_podildecil = ntile(dr_podil, n=10),
+         p_podildecil = ntile(p_podil, n=10)) %>% 
+  group_by(typfirmy, p_podildecil) %>% 
+  mutate(p_bin = )
+  
+
+ggplot(ver2014hist, aes(group=typfirmy)) +
+  geom_bar(aes(x=dr_podil), fill='grey') +
+  geom_bar(aes(x=p_podil), fill='orange') +
+  facet_wrap(~ typfirmy)
+
