@@ -3,7 +3,7 @@ library(foreign)
 library(dplyr)
 library(haven)
 
-ess <- read.dta("~/Downloads/ESS6e02_1.dta")
+ess <- read.dta("~/Documents/Research/Government/Data/ESS/ESS6e02_1.dta")
 
 table(ess$cntry)
 
