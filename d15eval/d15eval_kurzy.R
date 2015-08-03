@@ -1,50 +1,7 @@
-Sys.setlocale(category = "LC_ALL", locale = "Czech_Czech Republic.1252")
-
-library(pbtools)
-library(dplyr)
-library(reshape2)
-library(tidyr)
-library(Cairo)
-
-loc <- "C:/Users/boupet/Downloads/eval"
-
-## Load data using LimeSurvey script
-
-setwd(loc)
-getwd()
-source("survey_317642_R_syntax_file.R")
-
-## Kurzy: select vars and reshape into long format
-
-kurzy <- data %>% 
-  select(starts_with("kurz"),pohlavi,rocnik,vek, -kurzyjakedalsi, id ,-contains("Time")) %>%
-  melt(id.vars=c("id","pohlavi","vek","rocnik"))
-
-kurzy$kurzslot <- ifelse(grepl("kurz1",kurzy$variable),"A","B")
-  
-## Mark course slot and harmonise variable names so ratings from each course
-## have the same variable code regardless of slot
-
-kurzy$variable <- gsub("kurz1","kurz",kurzy$variable)
-kurzy$variable <- gsub("kurz2","kurz",kurzy$variable)
-
-## Create day markers for rating variables
-
-kurzy$variable[kurzy$variable=="kurzhodnoceni_1"] <- "pondělí"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_2"] <- "úterý"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_3"] <- "středa"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_4"] <- "čtvrtek"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_5"] <- "pátek"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_6"] <- "sobota"
-
-dnyvtydnu <- c("pondělí","úterý","streda","ctvrtek","patek","sobota")
-
-## chart for each course by day
-
-kurzy2 <- dcast(kurzy, "... ~ variable", value.var="value")
-
-kurzy_long <- melt(kurzy2, id.vars=c("id","pohlavi","vek","rocnik","kurzktery","kurzslot"))
-kurzy_long <- plyr::rename(kurzy_long, c("kurzktery"="kurz"))
+setwd("~/github/experiments/d15eval/")
+source("./d15eval_setup.R")
+setwd("~/github/experiments/d15eval/")
+source("./d15eval_kurzy_setup.R")
 
 kurzy3 <- kurzy_long %>% 
   filter(variable %in% dnyvtydnu,
@@ -53,9 +10,9 @@ kurzy3 <- kurzy_long %>%
          variable = droplevels(variable),
          variable = factor(variable, levels=dnyvtydnu))
 
-loadcustomthemes(fontfamily = "Calibri")
+loadcustomthemes(fontfamily = "Gill Sans MT")
 
-# Hodnoceni kurzu
+# Hodnoceni kurzu ####
 
 kurzy4 <- kurzy3 %>% 
   group_by(variable, kurz, kurzslot) %>% 
@@ -76,24 +33,96 @@ ggplot(kurzyplot, aes(x=variable, y=value, group=kurzslot, colour=kurzslot)) +
   geom_line(size=1) +
   geom_point(size=3, pch=19) +
   facet_wrap(~ kurz) + 
-  scale_y_continuous(limits=c(1,5))
+  scale_y_continuous(limits=c(1,5)) +
+  scale_colour_manual(values=c("lightgoldenrod1","aquamarine3","black")) +
+  geom_text(aes(label=formatC(value, digits=2, format="f"),
+                y=value+.5),
+            size=3, colour="black",fontface="bold",
+            data=kurzyplot[kurzyplot$kurzslot=="oba",]) +
+  theme(strip.background=element_rect(fill="darkgrey"),
+        panel.grid.minor=element_line(color="white", size=.5),
+        panel.grid.major=element_line(color="white", size=.75),
+        strip.text = element_text(size=12, color="white"),
+        panel.background = element_rect(fill="grey96"),
+        axis.text.x = element_text(size=11))
 
-##  Hodnoceni lektora
+##  Hodnoceni lektora #####
 
 lektor <- kurzy_long %>%
   filter(grepl("kurzobsah_",.$variable), !is.na(kurz)) %>% 
   mutate(variable = droplevels(variable)) %>% 
-  group_by(kurz, variable, value, ) %>% 
+  group_by(kurz, variable, value) %>% 
   summarise(pocet = n())
 
-lektor <- dcast(lektor, "... ~ value")
+lektor_wide <- dcast(lektor, "... ~ value")
+
+lektor$variable <- plyr::revalue(lektor$variable,
+                                 c("kurzobsah_lekodbornik"="Byl lektor dostatečný odborník na tento kurz?",
+                                   "kurzobsah_lekpoutave"="Učil lektor poutavě?",
+                                   "kurzobsah_lekpripraveny"="Byl lektor dobře připravený na tento kurz?",
+                                   "kurzobsah_lekpristupny"="Byl lektor přístupný i mimo setkání kurzu?",
+                                   "kurzobsah_lekvysvet"="Vysvětloval lektor srozumitelně?",
+                                   "kurzobsah_lekzapoj"="Vytvořil ti lektor prostor zapojit se do dění v kurzu?",
+                                   "kurzobsah_prinos"="Byl kurz pro tebe celkově přínosný?",
+                                   "kurzobsah_problemzapojit"="Měl/a jsi problém zapojit se do dění v kurzu?"
+                                 ))
+
+lektor$value <- as.factor(lektor$value)
+levels(lektor$value)
+lektor$value <- factor(lektor$value, levels(lektor$value)[c(5,3,1,4,2)])
+
+lektor <- arrange(lektor, value)
 
 ggplot(lektor, aes(group=kurz, x=variable, y=pocet, fill=value)) +
-  geom_bar(stat="identity", position="fill") + 
+  geom_bar(stat="identity", position="fill", color="white") + 
   facet_wrap(~ kurz) + 
-  coord_flip()
+  coord_flip() +
+  scale_fill_brewer(palette = "RdBu") +
+  scale_y_continuous()
 
-# Likert
+# Home-made Likert thing
+
+lektor <- kurzy_long %>%
+  filter(grepl("kurzobsah_",.$variable), !is.na(kurz)) %>% 
+  mutate(variable = droplevels(variable)) %>% 
+  group_by(kurz, variable, value) %>% 
+  summarise(pocet = n())
+
+lektor2 <- lektor %>%  
+  mutate(total=sum(pocet),
+         share=pocet/total,
+         share = ifelse(value=="Určitě ne",-share, share),
+         share = ifelse(value=="Spíše ne",-share, share),
+         share = ifelse(value=="Nevím",-share/2, share))
+
+addthis <- lektor2[lektor2$value=="Nevím",]
+addthis$share <- -addthis$share
+lektor2 <- rbind(lektor2, addthis)
+
+lektor2 <- lektor2[!is.na(lektor2$variable),]
+lektor2$variable <- droplevels(lektor2$variable)
+
+positive <- lektor2[lektor2$share>0,]
+positive$value <- as.factor(positive$value)
+levels(positive$value)
+negative <- lektor2[lektor2$share<0,]
+negative$value <- as.factor(negative$value)
+levels(negative$value)
+
+ggplot() +
+  geom_bar(stat="identity", position="stack", color=NA,
+           data=positive,
+           aes(order=-as.numeric(value),fill=value,
+               x=variable,y=share,group=kurz)) +
+  geom_bar(stat="identity", position="stack", color=NA,
+           data=negative, 
+           aes(order=as.numeric(value),fill=value,
+               x=variable, y=share, group=kurz)) +
+  facet_wrap(~kurz) + 
+  coord_flip() +
+  scale_fill_brewer(palette = "RdBu")
+
+# Likert - using likert package, grouping is not working
 
 ldata <- kurzy_long %>% 
   filter(grepl("kurzobsah_",.$variable), !is.na(kurz)) %>% 
@@ -109,3 +138,47 @@ ldata <- as.data.frame(
                                                "Nevím", "Spíše ne", "Urcite ne"))))
 likertobject <- likert(items=ldata, grouping = ldatakurz)
 likert.bar.plot(likertobject)
+
+## Velikost x hodnocení ####
+
+setwd("~/github/experiments/d15eval/")
+velikost <- read.csv("velikostkurzu.csv")
+velikost <- melt(velikost, id.vars="kurz")
+velikost <- plyr::rename(velikost,c("variable"="kurzslot", "value"="velikost")) 
+
+kurzhodavg <- kurzy_long %>% 
+  select(kurzslot, variable, value, kurz) %>% 
+  filter(variable %in% dnyvtydnu) %>%
+  group_by(kurz, kurzslot) %>% 
+  summarise(value=mean(as.numeric(value), na.rm=T)) %>% 
+  merge(velikost)
+
+ggplot(kurzhodavg, aes(velikost, value, color=kurzslot)) +
+  geom_point()
+
+kurzhodavg_c <- kurzhodavg[complete.cases(kurzhodavg),]
+
+cor(kurzhodavg_c$value, kurzhodavg_c$velikost)
+
+## Korelace
+
+m <- select(kurzy_long, kurzslot, value)
+m <- m[complete.cases(m),]
+m$value <- as.numeric(m$value)
+
+t.test(m$value~m$kurzslot)
+
+hod <- filter(kurzy_long, variable %in% dnyvtydnu)
+hod$value <- as.numeric(hod$value)
+
+model <- lm(value ~ variable + vek + pohlavi + kurzslot + kurz, data = hod)
+summary(model)
+
+library(sjPlot)
+sjp.lm(model, sort.est = F)
+
+## Didaktika ####
+
+## Náročnost ####
+
+narocnost <- kurzy_long
