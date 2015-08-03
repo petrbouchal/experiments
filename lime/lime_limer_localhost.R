@@ -3,7 +3,7 @@ library(devtools)
 
 library(limer)
 
-options(lime_api = 'http://localhost/limesurvey/admin/remotecontrol')
+options(lime_api = 'http://localhost/admin/remotecontrol')
 options(lime_username = 'admin')
 options(lime_password = 'admin')
 
@@ -12,9 +12,9 @@ options(lime_password = 'admin')
 
 
 session_key <- limer::get_session_key()
-responses <- get_responses(282299)
+responses <- get_responses(159836)
 
-get_responses(282299)
+get_responses(159836)
 
 raw_data <- call_limer(method = "export_responses", 
                        params = list(iSurveyID = 282299, 
