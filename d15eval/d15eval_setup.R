@@ -7,7 +7,7 @@ library(Cairo)
 if(whatplatform()=="win") {
   Sys.setlocale(category = "LC_ALL", locale = "Czech_Czech Republic.1252")
   loc <- "C:/Users/boupet/Downloads/eval"
-  options(encoding = "UTF8")
+  options(encoding = "UTF-8")
   } else {
   Sys.setlocale(category = "LC_ALL", locale = "cs_CZ.UTF-8")
   loc <- "~/Documents/Work/Discover/Discover 2015/Evaluace/data_final/"

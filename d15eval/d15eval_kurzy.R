@@ -70,6 +70,7 @@ lektor$variable <- plyr::revalue(lektor$variable,
 lektor$value <- as.factor(lektor$value)
 levels(lektor$value)
 lektor$value <- factor(lektor$value, levels(lektor$value)[c(5,3,1,4,2)])
+levels(lektor$value)
 
 lektor <- arrange(lektor, value)
 
@@ -102,20 +103,20 @@ lektor2 <- rbind(lektor2, addthis)
 lektor2 <- lektor2[!is.na(lektor2$variable),]
 lektor2$variable <- droplevels(lektor2$variable)
 
-positive <- lektor2[lektor2$share>0,]
-positive$value <- as.factor(positive$value)
-levels(positive$value)
-negative <- lektor2[lektor2$share<0,]
-negative$value <- as.factor(negative$value)
-levels(negative$value)
+l_positive <- lektor2[lektor2$share>0,]
+l_positive$value <- as.factor(l_positive$value)
+levels(l_positive$value)
+l_negative <- lektor2[lektor2$share<0,]
+l_negative$value <- as.factor(l_negative$value)
+levels(l_negative$value)
 
 ggplot() +
   geom_bar(stat="identity", position="stack", color=NA,
-           data=positive,
+           data=l_positive,
            aes(order=-as.numeric(value),fill=value,
                x=variable,y=share,group=kurz)) +
   geom_bar(stat="identity", position="stack", color=NA,
-           data=negative, 
+           data=l_negative, 
            aes(order=as.numeric(value),fill=value,
                x=variable, y=share, group=kurz)) +
   facet_wrap(~kurz) + 
@@ -171,7 +172,7 @@ t.test(m$value~m$kurzslot)
 hod <- filter(kurzy_long, variable %in% dnyvtydnu)
 hod$value <- as.numeric(hod$value)
 
-model <- lm(value ~ variable + vek + pohlavi + kurzslot + kurz, data = hod)
+model <- lm(value ~ variable + rocnik + pohlavi + kurzslot + kurz, data = hod)
 summary(model)
 
 library(sjPlot)
@@ -181,4 +182,13 @@ sjp.lm(model, sort.est = F)
 
 ## Náročnost ####
 
-narocnost <- kurzy_long
+narocnost <- kurzy_long %>% 
+  filter(grepl("narocnost",variable)) %>% 
+  group_by(kurz, variable, value) %>%
+  summarise(pocet=n()) %>% 
+  group_by(kurz, variable) %>% 
+  mutate(share=pocet/sum(pocet))
+  
+
+  
+  
