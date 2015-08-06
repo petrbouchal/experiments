@@ -14,14 +14,14 @@ kurzy$variable <- gsub("kurz2","kurz",kurzy$variable)
 
 ## Create day markers for rating variables
 
-kurzy$variable[kurzy$variable=="kurzhodnoceni_1"] <- "pondělí"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_2"] <- "úterý"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_3"] <- "středa"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_4"] <- "čtvrtek"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_5"] <- "pátek"
-kurzy$variable[kurzy$variable=="kurzhodnoceni_6"] <- "sobota"
+kurzy$variable[kurzy$variable=="kurzhodnoceni_1"] <- "po"
+kurzy$variable[kurzy$variable=="kurzhodnoceni_2"] <- "út"
+kurzy$variable[kurzy$variable=="kurzhodnoceni_3"] <- "st"
+kurzy$variable[kurzy$variable=="kurzhodnoceni_4"] <- "čt"
+kurzy$variable[kurzy$variable=="kurzhodnoceni_5"] <- "pá"
+kurzy$variable[kurzy$variable=="kurzhodnoceni_6"] <- "so"
 
-dnyvtydnu <- c("pondělí","úterý","středa","čtvrtek","pátek","sobota")
+dnyvtydnu <- c("po","út","st","čt","pá","so")
 
 ## chart for each course by day
 
