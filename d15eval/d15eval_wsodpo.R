@@ -7,4 +7,6 @@ wsnej <- data %>%
   summarise(count=n()) %>% 
   arrange(desc(count))
 wsnej
-# View(wsnej)
+
+View(wsnej)
+sum(wsnej$count)
