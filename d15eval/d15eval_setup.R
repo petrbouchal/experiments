@@ -21,6 +21,22 @@ setwd(loc)
 getwd()
 source("survey_317642_R_syntax_file.R")
 
-# Fix incompletes #########
+# codebook here:
+# http://localhost/index.php/admin/expressions/sa/survey_logic_file/sid/317642
 
-# need to merge #3 and #8 od výběru kurzů dál (column 66 and on in "data")
+# remove false starts
+data <- data[!(data$id %in% 14:16),]
+
+# merge records where respondent had to restart
+# (identified visually by ID and note)
+data[data$id==3,66:249] <- data[data$id==11,66:249] # merge
+data <- data[data$id!=11,] # remove line for second entry
+
+# now we have one incomplete and one missing (did not respond) and two 
+# missing last pages (computer broke down)
+
+# check incompletes
+
+table(is.na(data[,1]))
+table(is.na(data[,151]))
+table(is.na(data[,153]))
