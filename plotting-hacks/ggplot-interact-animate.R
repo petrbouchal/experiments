@@ -28,3 +28,7 @@ gg_point_2 <- ggplot(dataset, aes(x = disp, y = qsec,
 ggiraph(code = {print(gg_point_2 + mytheme_main)}, 
         width = 7, height = 6, 
         hover_css = "{fill:orange;r:6px;}")
+
+ggiraph(code = {print(gg_point_2)}, 
+        width = 7, height = 6, 
+        hover_css = "{fill:orange;r:6px;}")
