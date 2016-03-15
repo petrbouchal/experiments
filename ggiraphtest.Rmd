@@ -1,6 +1,8 @@
 ---
 title: "Untitled"
-output: html_document
+output: 
+  html_document: 
+    self_contained: no
 ---
 
 ```{r setup, include=FALSE}
@@ -39,7 +41,7 @@ gg_point_2 <- ggplot(dataset, aes(x = disp, y = qsec,
 # htmlwidget call
 ggiraph(code = {print(gg_point_2)}, 
         width = 7, height = 6, 
-        hover_css = "fill:orange;r:6px;", fontname_serif="Cambria", fontname_sans="Gill Sans MT")
+        hover_css = "fill:orange;r:6px;", fontname_serif="Cambria", fontname_sans="Gill Sans MT", zoom_max = 1)
 
 ```
 
