@@ -30,5 +30,5 @@ ggiraph(code = {print(gg_point_2 + mytheme_main)},
         hover_css = "fill:orange;r:6px;")
 
 # with subtitle, depends on https://github.com/hadley/ggplot2/pull/1582
-ggiraph(code={print(ggplot(data=mtcars, aes(mpg, cyl)) + geom_point_interactive() + labs(title="blah", subtitle="blah blah", annotation="blahnotation"))})
+ggiraph(code={print(ggplot(data=mtcars, aes(mpg, cyl)) + geom_point_interactive() + labs(title="blah", subtitle="blah blah", caption="blahnotation"))})
 
