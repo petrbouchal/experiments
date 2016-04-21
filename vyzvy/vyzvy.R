@@ -41,14 +41,14 @@ dvyzvy <- dv %>%
 
 library(ggplot2)
 
-graphable <- dvyzvy %>% group_by(opname.x, zmenena, pocetzmen) %>% 
+graphable <- dvyzvy %>% group_by(opname.x, zmenena, pocetzmen, opabb) %>% 
   summarise(castka = sum(alokaceCZK), pocet=n())
 
 ggplot(graphable, aes(opabb, castka)) +
   geom_bar(aes(fill=pocetzmen), stat = "identity") +
   coord_flip()
 
-ggplot(dvyzvy, aes(plandatumvyhl, pocetzmen, size=alokaceCZK)) + geom_point() + facet_wrap(~ opname.x)
+ggplot(dvyzvy, aes(plandatumvyhl, pocetzmen, size=alokaceCZK)) + geom_point(alpha=.5) + facet_wrap(~ opabb)
 
 ggplot(zmeny, aes(datumvyhl)) + geom_bar()
 ggplot(zmeny, aes(rozdil)) + geom_bar()
