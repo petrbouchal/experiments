@@ -53,7 +53,9 @@ dvyzvy <- dv %>%
          opabb=ifelse(opname.x=="Program rozvoje venkova","PRV", opabb),
          oplabel=paste(opnum,opabb),
          zaheslovana = ifelse(vyzvakod %in% zaheslovani$vyzvakod, TRUE, FALSE)) %>% 
-  arrange(opnum) %>% 
+  arrange(opnum)
+
+dvyzvy <- dvyzvy %>% 
   mutate(opabb = factor(opabb, ordered=T,
                         levels=unique(dvyzvy[order(dvyzvy$opnum),"opabb"][[1]])))
 
@@ -81,6 +83,9 @@ theme_vyzvymulti <- theme_minimal() +
         axis.text.x=element_text(vjust = 1),
         legend.box.just="left",
         legend.box="horizontal")
+
+theme_vyzvy <- theme_minimal() +
+  
 
 ggplot(dvyzvy[!(dvyzvy$opabb %in% c("PRV","OP R")),],
        aes(as.Date(plandatumvyhl), pocetzmen, size=alokaceCZK/1000000)) +
