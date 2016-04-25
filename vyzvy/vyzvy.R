@@ -179,6 +179,6 @@ ggplot(data=dvv[!(dvv$opabb %in% c("PRV","OP R")),], aes(y=vyzvakod, yend=vyzvak
        subtitle="všechny výzvy finalizované před 20. dubnem 2015",
        x=NULL, y=NULL,
        caption="PRV a OP R vynechány - používají vlastní systém a není jisté,\n 
-       jestli se údaje o mofidikacích přenáší do MSSF.")
+       jestli se údaje o modifikacích přenáší do MSSF.")
 dev.off()
 
