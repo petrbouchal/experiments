@@ -150,7 +150,6 @@ dvv$xend1[dvv$plandatumukonpredbez > as.POSIXct("2016-4-21")] <- as.POSIXct("201
 dvv$xend2[dvv$plandatumukonzadosti > as.POSIXct("2016-4-21")] <- as.POSIXct("2016-4-21")
 zmeny$vyzvakod <- str_sub(zmeny$vyzvakod, 4)
 
-cairo_pdf(width = 11.7, height = 8.3)
 ggplot(data=dvv[!(dvv$opabb %in% c("PRV","OP R")),], aes(y=vyzvakod, yend=vyzvakod)) +
   geom_segment(aes(x=as.Date(plandatumvyhl), xend=as.Date(xend1),
                colour="grey50"), size=1.2) + 
@@ -180,6 +179,5 @@ ggplot(data=dvv[!(dvv$opabb %in% c("PRV","OP R")),], aes(y=vyzvakod, yend=vyzvak
        subtitle="všechny výzvy finalizované před 20. dubnem 2015",
        x=NULL, y=NULL,
        caption="PRV a OP R vynechány - používají vlastní systém a není jisté,\n 
-       jestli se údaje o mofidikacích přenáší do MSSF.")
-dev.off()
+       jestli se údaje o modifikacích přenáší do MSSF.")
 
