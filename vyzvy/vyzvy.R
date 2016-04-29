@@ -11,12 +11,12 @@ thousandspace <- function(l) {
   format(l, big.mark = " ", scientific = F)
 }
 
-vyzvy <- read_excel("~/Dropbox/MMR/vyzvy/Přehled všech výzev_20_4_16.xlsx")
-zmeny <- read_excel("~/Dropbox/MMR/vyzvy/Rozdíl mezi datem vyhlášení a modifikací výzvy.xlsx")
-zaheslovani <- read_excel("~/Dropbox/MMR/vyzvy/zaheslování výzev.xlsx")
-# vyzvy <- read_excel("D:/usr/Dropbox/MMR/vyzvy/Přehled všech výzev_20_4_16.xlsx")
-# zmeny <- read_excel("D:/usr/Dropbox/MMR/vyzvy/Rozdíl mezi datem vyhlášení a modifikací výzvy.xlsx")
-# zaheslovani <- read_excel("D:/usr/Dropbox/MMR/vyzvy/zaheslování výzev.xlsx")
+# vyzvy <- read_excel("~/Dropbox/MMR/vyzvy/Přehled všech výzev_20_4_16.xlsx")
+# zmeny <- read_excel("~/Dropbox/MMR/vyzvy/Rozdíl mezi datem vyhlášení a modifikací výzvy.xlsx")
+# zaheslovani <- read_excel("~/Dropbox/MMR/vyzvy/zaheslování výzev.xlsx")
+vyzvy <- read_excel("D:/usr/Dropbox/MMR/vyzvy/Přehled všech výzev_20_4_16.xlsx")
+zmeny <- read_excel("D:/usr/Dropbox/MMR/vyzvy/Rozdíl mezi datem vyhlášení a modifikací výzvy.xlsx")
+zaheslovani <- read_excel("D:/usr/Dropbox/MMR/vyzvy/zaheslování výzev.xlsx")
 
 names(zmeny) <- zmeny[2,]
 zmeny <- zmeny[-c(1,2),]
@@ -165,6 +165,7 @@ ggplot(data=dvv[!(dvv$opabb %in% c("PRV","OP R")),], aes(y=vyzvakod, yend=vyzvak
                       guide="legend", name=NULL,
                       labels=c("Doba příjmu předběžných žádostí",
                                "Doba příjmu žádostí o podporu")) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%m/%y", date_minor_breaks = "1 month") +
   scale_shape_manual(labels=c("Modifikace výzvy"), name=NULL, guide="legend",
                      values=c("Modifikace výzvy"=19)) +
   guides(shape="legend") +
