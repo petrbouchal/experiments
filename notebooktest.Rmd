@@ -1,0 +1,51 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+
+
+```{r}
+plot(cars)
+mean(cars$speed)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+
+```{r}
+library(feather)
+data(iris)
+write_feather(iris, "iris.feather")
+
+fff <- function(x) {print(x)}
+fff(iris$Sepal.Length[3])
+```
+
+
+```{python}
+string = "Hello world"
+print(string)
+print(string.replace("ll","xx"))
+
+import sys
+# print(sys.version)
+
+import numpy as np
+import pandas as pd
+
+import feather
+
+dd = feather.read_dataframe("iris.feather")
+print(dd.head(2))
+dd2=dd.drop(1)
+print(dd2.head(2))
+print(dd2['Sepal.Width'].head(3))
+
+feather.write_dataframe(dd2,"iris2.feather")
+```
