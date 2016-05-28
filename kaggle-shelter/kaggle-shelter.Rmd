@@ -1,0 +1,171 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r Setup & load train data}
+library(readr)
+library(caret)
+library(ggplot2)
+library(stringr)
+library(dplyr)
+library(lubridate)
+ks <- read_csv("train.csv")
+kstest <- read_csv("test.csv.gz")
+names(ks) <- tolower(names(ks))
+names(kstest) <- tolower(names(kstest))
+str(ks)
+```
+
+```{r Process data}
+
+ks$mix <- grepl("([Mm]ix)|(/)",ks$breed)
+ks$female <- grepl("[Ff]emale",ks$sexuponoutcome)
+ks$intact <- grepl("Intact", ks$sexuponoutcome)
+
+table(ks$mix,ks$female)
+
+kstest$mix <- grepl("([Mm]ix)|(/)",kstest$breed)
+kstest$female <- grepl("[Ff]emale",kstest$sexuponoutcome)
+kstest$intact <- grepl("Intact", kstest$sexuponoutcome)
+
+ks$agenum <- str_match(ks$ageuponoutcome,"[0-9]{1,3}")
+kstest$agenum <- str_match(kstest$ageuponoutcome,"[0-9]{1,3}")
+table(ks$agenum)
+
+ks$ageunit <- str_match(ks$ageuponoutcome, "[a-zA-Z]+")
+kstest$ageunit <- str_match(kstest$ageuponoutcome, "[a-zA-Z]+")
+table(ks$ageunit)
+# ks$ageunitmultiple
+
+matchrecode <- function(data, table) {
+  for (i in 1:length(table[[1]])) {
+    data[grepl(table[[1]][i],data)] <- table[[2]][i]
+  }
+  return(data)
+}
+
+recodelist <- list(c("day","week","month","year"), c(1, 7, 31, 365))
+ks$ageunitmultiple <- matchrecode(ks$ageunit, recodelist)
+kstest$ageunitmultiple <- matchrecode(kstest$ageunit, recodelist)
+ks$ageunitmultiple <- as.numeric(ks$ageunitmultiple)
+kstest$ageunitmultiple <- as.numeric(kstest$ageunitmultiple)
+ks$agenum <- as.numeric(ks$agenum)
+kstest$agenum <- as.numeric(kstest$agenum)
+ks$agedays <- ks$agenum * ks$ageunitmultiple
+ks$agedays[is.na(ks$ageuponoutcome)] <- mean(ks$agedays, na.rm = T)
+kstest$agedays <- kstest$agenum * kstest$ageunitmultiple
+kstest$agedays[is.na(kstest$ageuponoutcome)] <- mean(kstest$agedays, na.rm = T)
+ks$agedays2 = ks$agedays*ks$agedays
+kstest$agedays2 = kstest$agedays*kstest$agedays
+
+breedlists <- list(c("[Tt]errier","[Ll]abrador","[Dd]omestic [Ss]horthair", "[Cc]hihuahua"),
+                                   c("Terrier","Labrador","Domestic shorthair",
+                                     "Chihuahua"))
+
+ks$breedsimple <- matchrecode(ks$breed,breedlists)
+kstest$breedsimple <- matchrecode(kstest$breed,breedlists)
+table(ks$breedsimple)
+ks$breedsimple[!(ks$breed %in% breedlists[[2]])] <- "Other"
+kstest$breedsimple[!(kstest$breed %in% breedlists[[2]])] <- "Other"
+# table(ks$breedsimple)
+```
+
+
+```{r Plot outcomes and animals}
+ggplot(ks, aes(outcometype)) + geom_bar(aes(fill=animaltype))
+```
+
+```{r Plot age and outcome}
+ggplot(ks, aes(agedays)) + geom_histogram(binwidth = 10) + facet_grid(outcometype~.)
+```
+
+```{r Plot outcomes and suboutcomes}
+ggplot(ks, aes(outcometype, outcomesubtype)) + geom_jitter(alpha=.4) 
+```
+
+```{r}
+ggplot(ks, aes(outcometype)) + geom_bar(aes(fill=mix)) + facet_grid(~animaltype) + coord_flip()
+```
+
+```{r}
+ggplot(ks, aes(outcometype)) + geom_bar(aes(fill=intact)) + facet_grid(~animaltype) + coord_flip()
+```
+
+```{r}
+ggplot(ks, aes(outcometype)) + geom_bar(aes(fill=female)) + facet_grid(~animaltype) + coord_flip()
+```
+
+```{r Plot outcome over time}
+ggplot(ks, aes(datetime, outcometype)) + geom_point(alpha=.01) + theme_bw()
+```
+```{r Quarters of outcome}
+ks$outcometype <- as.factor(ks$outcometype)
+# table(ks$breed)
+table(quarter(ks$datetime), ks$outcometype)
+ks$qoutcome <- as.factor(quarter(ks$datetime))
+kstest$qoutcome <- as.factor(quarter(kstest$datetime))
+
+ks$veryyoung <- ks$agedays < 80
+kstest$veryyoung <- kstest$agedays < 80
+```
+
+```{r Run model}
+library(nnet)
+kss <- sample_n(ks, 3000)
+
+# plot(ks$outcometype, ks$agedays)
+
+mmm <- multinom(outcometype ~ female + mix + animaltype + intact + agedays + veryyoung, data=kss)
+summary(mmm)$coefficients/summary(mmm)$standard.errors
+exp(coef(mmm))
+```
+
+```{r Predict and diagnose}
+kss$predicted <- predict(mmm,kss, type="probs")
+kss$predicted0 <- predict(mmm,kss)
+
+table(kss$predicted0[kss$animaltype=="Dog"])
+table(kss$outcometype[kss$animaltype=="Dog"])
+
+table(kss$predicted0[kss$animaltype=="Cat"])
+table(kss$outcometype[kss$animaltype=="Cat"])
+
+confusionMatrix(kss$predicted0, kss$outcometype)
+
+```
+
+```{r Run on test}
+kstest$predicted <- predict(mmm,kstest, type="probs")
+```
+
+```{r Create submission dataset}
+samplesub <- read_csv("sample_submission.csv.gz")
+
+submission <- kstest %>% select(id, predicted)
+
+predictions <- as.data.frame(submission$predicted)
+final <- data.frame(submission$id)
+final <- bind_cols(final, predictions)
+
+head(submission$predicted)
+names(final)[1] <- "ID"
+head(final)
+write_csv(final, "submission.csv")
+```
+
+```{r}
+reread <- read_csv("submission.csv")
+str(reread)
+table(is.na(reread[1]))
+table(is.na(reread[2]))
+table(is.na(reread[3]))
+table(is.na(reread[4]))
+table(is.na(reread[5]))
+table(is.na(reread[6]))
+
+View(reread[is.na(reread[2]),])
+View(kstest[kstest$id %in% c(764,2499,6324,6348,7627,10755),])
+```
+
