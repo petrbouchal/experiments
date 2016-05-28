@@ -9,7 +9,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, cache=FALSE}
+devtools::install_github("petrbouchal/ggiraph")
 library(ggiraph)
 mytheme_main <- theme( panel.background = element_blank(), 
                        panel.grid.major = element_line(colour = "#dddddd"), 
@@ -28,7 +29,7 @@ gg_point_1 <- ggplot(dataset, aes(x = disp, y = qsec,
                                   color = wt, tooltip = tooltip ) ) + 
   geom_point_interactive(size=3)
 
-ggiraph(code = {print(gg_point_1 + mytheme_main)}, width = 7, height = 6)
+# ggiraph(code = {print(gg_point_1 + mytheme_main)}, width = 7, height = 6)
 
 dataset$data_id <- tolower(row.names(dataset))
 
@@ -41,7 +42,7 @@ gg_point_2 <- ggplot(dataset, aes(x = disp, y = qsec,
 # htmlwidget call
 ggiraph(code = {print(gg_point_2)}, 
         width = 7, height = 6, 
-        hover_css = "fill:orange;r:6px;", fontname_serif="Cambria", fontname_sans="Gill Sans MT", zoom_max = 1)
+        hover_css = "fill:orange;r:6px;", fontname_serif="Cambria", fontname_sans="Gill Sans MT", zoompan = F)
 
 ```
 
