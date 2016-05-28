@@ -1,0 +1,76 @@
+---
+title: "Basic HTML RMarkdown file"
+output:
+  html_document:
+    code_folding: hide
+    theme: yeti
+    toc: yes
+    toc_float: yes
+    smart: yes
+---
+
+``` {r Knitr prep, cache=FALSE,include=FALSE}
+library(knitr)
+# set up graphing:
+opts_chunk$set(echo=FALSE, dev='cairo_pdf', warning=FALSE)
+# make relative references work - change this to project directory
+opts_knit$set(root.dir='~/github/experiments/')
+```
+
+``` {r Load tools library from anywhere, include=TRUE, echo=TRUE}
+# install.packages(devtools)
+# library(devtools)
+# install_github('pbtools','petrbouchal')
+library(pbtools)
+```
+## Overview {.tabset}
+
+Lorem ipsum dolor sit amet, te habemus maluisset sit, in nec tibique postulant, commodo consectetuer ea mei. Eu duis eripuit his, te cum mucius melius viderer. Iisque delectus explicari has ut, mea tale delicatissimi et. Probo congue et eam, volumus ancillae verterem ad nam. Nulla mentitum voluptaria vis in, qui ea malis fabellas appellantur.
+
+Vis ex nisl tota graece, in mei nostrum appetere tincidunt. Facilis assueverit interesset has ut, mutat ullum debet eos ut. Cum ei amet elitr alienum, oratio ceteros omittam ne cum, in pro elitr cetero partiendo. Vide consequat et has, habeo altera luptatum vis eu.
+
+Usu ponderum perfecto cu. Nullam invidunt ut eam, vel ex graecis facilisis torquatos. Labitur detraxit consequat ut mei, et falli audiam vel, usu aeque nominavi suscipit ex. Eum ne bonorum consectetuer, eum ea hinc errem. Ad ius tibique mediocrem, no pri quot adipiscing intellegebat, ut fabellas scriptorem referrentur sed.
+
+In sea illum velit nonumes, officiis probatus vituperata ad duo. Simul ornatus mediocrem at est, ex facilisi electram est. Te mei melius laoreet. Movet errem est no. Novum dolores adolescens no pri. Eius accusamus laboramus ei eos. Pri minim meliore deterruisset id, ius te purto fierent, aeque sonet viris mel eu.
+
+Ut autem commodo sententiae usu, quo et civibus alienum. Pro ex dicta dolore, at mei percipit complectitur. Eos ne mutat primis. Cu qui phaedrum cotidieque, ne similique vituperatoribus sed.
+
+### blah1
+
+blah! 
+
+Lorem ipsum dolor sit amet, te habemus maluisset sit, in nec tibique postulant, commodo consectetuer ea mei. Eu duis eripuit his, te cum mucius melius viderer. Iisque delectus explicari has ut, mea tale delicatissimi et. Probo congue et eam, volumus ancillae verterem ad nam. Nulla mentitum voluptaria vis in, qui ea malis fabellas appellantur.
+
+Vis ex nisl tota graece, in mei nostrum appetere tincidunt. Facilis assueverit interesset has ut, mutat ullum debet eos ut. Cum ei amet elitr alienum, oratio ceteros omittam ne cum, in pro elitr cetero partiendo. Vide consequat et has, habeo altera luptatum vis eu.
+
+Usu ponderum perfecto cu. Nullam invidunt ut eam, vel ex graecis facilisis torquatos. Labitur detraxit consequat ut mei, et falli audiam vel, usu aeque nominavi suscipit ex. Eum ne bonorum consectetuer, eum ea hinc errem. Ad ius tibique mediocrem, no pri quot adipiscing intellegebat, ut fabellas scriptorem referrentur sed.
+
+In sea illum velit nonumes, officiis probatus vituperata ad duo. Simul ornatus mediocrem at est, ex facilisi electram est. Te mei melius laoreet. Movet errem est no. Novum dolores adolescens no pri. Eius accusamus laboramus ei eos. Pri minim meliore deterruisset id, ius te purto fierent, aeque sonet viris mel eu.
+
+Ut autem commodo sententiae usu, quo et civibus alienum. Pro ex dicta dolore, at mei percipit complectitur. Eos ne mutat primis. Cu qui phaedrum cotidieque, ne similique vituperatoribus sed.
+
+### blah2
+
+blah !!!
+
+Lorem ipsum dolor sit amet, te habemus maluisset sit, in nec tibique postulant, commodo consectetuer ea mei. Eu duis eripuit his, te cum mucius melius viderer. Iisque delectus explicari has ut, mea tale delicatissimi et. Probo congue et eam, volumus ancillae verterem ad nam. Nulla mentitum voluptaria vis in, qui ea malis fabellas appellantur.
+
+Vis ex nisl tota graece, in mei nostrum appetere tincidunt. Facilis assueverit interesset has ut, mutat ullum debet eos ut. Cum ei amet elitr alienum, oratio ceteros omittam ne cum, in pro elitr cetero partiendo. Vide consequat et has, habeo altera luptatum vis eu.
+
+Usu ponderum perfecto cu. Nullam invidunt ut eam, vel ex graecis facilisis torquatos. Labitur detraxit consequat ut mei, et falli audiam vel, usu aeque nominavi suscipit ex. Eum ne bonorum consectetuer, eum ea hinc errem. Ad ius tibique mediocrem, no pri quot adipiscing intellegebat, ut fabellas scriptorem referrentur sed.
+
+In sea illum velit nonumes, officiis probatus vituperata ad duo. Simul ornatus mediocrem at est, ex facilisi electram est. Te mei melius laoreet. Movet errem est no. Novum dolores adolescens no pri. Eius accusamus laboramus ei eos. Pri minim meliore deterruisset id, ius te purto fierent, aeque sonet viris mel eu.
+
+Ut autem commodo sententiae usu, quo et civibus alienum. Pro ex dicta dolore, at mei percipit complectitur. Eos ne mutat primis. Cu qui phaedrum cotidieque, ne similique vituperatoribus sed.
+
+## Analysis
+
+Lorem ipsum dolor sit amet, te habemus maluisset sit, in nec tibique postulant, commodo consectetuer ea mei. Eu duis eripuit his, te cum mucius melius viderer. Iisque delectus explicari has ut, mea tale delicatissimi et. Probo congue et eam, volumus ancillae verterem ad nam. Nulla mentitum voluptaria vis in, qui ea malis fabellas appellantur.
+
+Vis ex nisl tota graece, in mei nostrum appetere tincidunt. Facilis assueverit interesset has ut, mutat ullum debet eos ut. Cum ei amet elitr alienum, oratio ceteros omittam ne cum, in pro elitr cetero partiendo. Vide consequat et has, habeo altera luptatum vis eu.
+
+Usu ponderum perfecto cu. Nullam invidunt ut eam, vel ex graecis facilisis torquatos. Labitur detraxit consequat ut mei, et falli audiam vel, usu aeque nominavi suscipit ex. Eum ne bonorum consectetuer, eum ea hinc errem. Ad ius tibique mediocrem, no pri quot adipiscing intellegebat, ut fabellas scriptorem referrentur sed.
+
+In sea illum velit nonumes, officiis probatus vituperata ad duo. Simul ornatus mediocrem at est, ex facilisi electram est. Te mei melius laoreet. Movet errem est no. Novum dolores adolescens no pri. Eius accusamus laboramus ei eos. Pri minim meliore deterruisset id, ius te purto fierent, aeque sonet viris mel eu.
+
+Ut autem commodo sententiae usu, quo et civibus alienum. Pro ex dicta dolore, at mei percipit complectitur. Eos ne mutat primis. Cu qui phaedrum cotidieque, ne similique vituperatoribus sed.
