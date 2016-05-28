@@ -148,6 +148,8 @@ dvv$xend1 <- dvv$plandatumukonpredbez
 dvv$xend2 <- dvv$plandatumukonzadosti
 dvv$xend1[dvv$plandatumukonpredbez > as.POSIXct("2016-4-21")] <- as.POSIXct("2016-4-21")
 dvv$xend2[dvv$plandatumukonzadosti > as.POSIXct("2016-4-21")] <- as.POSIXct("2016-4-21")
+dvv$opabb <- paste0(" ", dvv$opabb)
+zmeny$opabb <- paste0(" ", zmeny$opabb)
 zmeny$vyzvakod <- str_sub(zmeny$vyzvakod, 4)
 
 ggplot(data=dvv[!(dvv$opabb %in% c("PRV","OP R")),], aes(y=vyzvakod, yend=vyzvakod)) +
@@ -155,11 +157,11 @@ ggplot(data=dvv[!(dvv$opabb %in% c("PRV","OP R")),], aes(y=vyzvakod, yend=vyzvak
                colour="grey50"), size=1.2) + 
   geom_segment(aes(x=as.Date(plandatumprijem),
                    xend=as.Date(xend2), colour="lightblue"),  size=1.4) + 
-  scale_x_date(limits = c(as.Date("2015-6-1"),as.Date(Sys.Date()))) +
   geom_point(data=zmeny[(zmeny$vyzvakod %in% dvv$vyzvakod) & !(zmeny$opabb %in% c("PRV","OP R")),],
              aes(x=as.Date(datumzmenyZ), shape="Modifikace výzvy"),
              colour="red1", stroke=0) +
   facet_wrap(~opabb, scales = "free_y", nrow = 2) +
+  scale_x_date(limits = c(as.Date("2015-6-1"),as.Date(Sys.Date())), date_labels = "%m/%y") +
   scale_colour_manual(values=c("grey50"="grey50","lightblue"="lightblue"),
                       guide="legend", name=NULL,
                       labels=c("Doba příjmu předběžných žádostí",
