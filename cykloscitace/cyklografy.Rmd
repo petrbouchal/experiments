@@ -1,0 +1,381 @@
+---
+title: "Dopad akce Do práce na kole"
+output: 
+  html_notebook: 
+    code_folding: hide
+---
+
+```{r Setup}
+library(tidyverse)
+library(lubridate)
+library(modelr)
+library(lme4)
+library(broom)
+
+options("scipen" = 10)
+
+load("./cyklodata_all.Rda")
+```
+
+# Hypotézy
+
+1. DPNK zvýší počet cyklistů v květnu oproti srovnatelným dnům v dubnu a červnu
+a. toto se bude dít více ve špičce
+b. toto se nebude dít o víkendu a ve svátky
+
+2. DPNK sníží vliv počasí na počet cyklistů ve špičce - neboli vliv počasí na počet cyklistů by měl být nižší v květnu ve špičce
+
+3. DPNK může mít spillover mimo dojiždění, tj. může zvyšovat počet cyklistů v květnu. Identifikační strategie pro (1) a (2) stojí na neplatnosti této hypotézy
+
+4. DPNK může mít spillover effect do konce léta
+
+5. Efekt DPNK narůstá v průběhu let
+
+
+```{r Process data}
+svatky <- c(c("1-1","5-1","5-8","7-6","7-5",
+                    "9-28","10-28","11-17","12-24","12-25","12-26"))
+velikonocnidata <- c("2011-04-25","2012-04-08","2013-04-01","2014-04-21",
+                     "2015-04-06","2016-03-25","2016-03-28")
+
+csdata <- csdata %>% 
+  # filter(!is.na(totalcount)) %>% 
+  mutate(time = as_datetime(time),
+         date = as_date(time),
+         datum = floor_date(date, "day"),
+         dayofyear = yday(datum),
+         year = year(time),
+         month = month(time),
+         day = day(time),
+         datenoyear = paste0(month, "-", day(date)),
+         dayofweek = wday(time, label = T),
+         weekend = dayofweek %in% c("Sat","Sun"),
+         svatek = datenoyear %in% svatky,
+         svatek = svatek == T | date %in% velikonocnidata,
+         svatekvevsedniden = svatek & !weekend,
+         volno = (svatek == T | weekend == T),
+         tempave = as.numeric(tempave),
+         commutetime = ((5 < hour(time) & hour(time) < 10) |
+                          (14 < hour(time) & hour(time) < 20)),
+         timeslots = ifelse(5 < hour(time) & hour(time) < 10, "ráno",
+                            ifelse(14 < hour(time) & hour(time) < 20,
+                                   "večer","mimo špičku")),
+         timeslots = as.factor(timeslots))
+```
+
+```{r Inspect data}
+summary(csdata)
+summary(csdata$totalcount)
+csdata$totalcount %>% hist(n=100)
+csdata %>% group_by(year) %>% mutate(nodata = ifelse(is.na(totalcount),T,F)) %>% 
+  summarise(prumer = mean(nodata))
+csdata %>% group_by(time, commutetime) %>% summarise()
+csdata %>% select(date, dayofweek, volno) %>% distinct(date, dayofweek, volno) %>% 
+  group_by(dayofweek, volno) %>% summarise(count = n())
+csdata %>% select(date, dayofweek, volno, weekend) %>% distinct(date, dayofweek, weekend) %>% 
+  group_by(dayofweek, weekend) %>% summarise(count = n())
+```
+
+
+```{r Exploratory visual checks}
+
+csdata %>% group_by(year, dayofweek) %>% 
+  filter(svatek == FALSE & !is.na(totalcount)) %>% 
+  summarise(totalcount = sum(totalcount)) %>% 
+  ggplot(aes(y=totalcount, x=dayofweek, group=year)) + 
+  geom_col() +
+  facet_wrap(~year)
+
+csdata %>% group_by(year, month) %>% 
+  filter(svatek == FALSE & !is.na(totalcount)) %>% 
+  summarise(totalcount = sum(totalcount)) %>% 
+  ggplot(aes(y=totalcount, x=month, group=year)) + 
+  geom_col() +
+  facet_wrap(~year)
+
+csdata %>% group_by(year, month) %>% 
+  filter(svatek == FALSE & !is.na(totalcount)) %>% 
+  summarise(meantemp = mean(tempave, na.rm=T)) %>% 
+  ggplot(aes(y=meantemp, x=month, group=year)) + 
+  geom_col() +
+  facet_wrap(~year)
+
+csdata %>% group_by(misto, year) %>% 
+  filter(svatek == FALSE & !is.na(totalcount)) %>% 
+  summarise(pocet = sum(totalcount, na.rm=T)) %>% 
+  ggplot(aes(y=pocet, x=year, group=misto)) + 
+  geom_col() +
+  facet_wrap(~misto)
+
+csdata %>% group_by(misto, year, month) %>% 
+  # filter(svatek == FALSE & !is.na(totalcount)) %>% 
+  summarise(pocet = sum(totalcount, na.rm=T)) %>% 
+  ggplot(aes(y=pocet, x=month, group=misto)) + 
+  geom_col() +
+  facet_grid(year~misto)
+
+
+```
+
+Exclude places and years where there is incomplete or unreliable data
+
+(Note for 2017 will need to add holiday dates)
+
+```{r Exclude places & years}
+
+placestoexclude <- c("pelleova","kolcavka","elsnicovonam",
+                     "divokasarka","podolskenabrezivozovka",
+                     "seberov","vysocany")
+
+csdata <- csdata %>% filter(!misto %in% placestoexclude & year > 2011 & year != 2017)
+
+```
+
+
+```{r DPNK descriptive chart}
+
+csdata %>%
+  filter(month %in% c(1:12) & !is.na(totalcount) & year != 2011) %>%
+  mutate(pracovni = ifelse(volno, "Nepracovní", "Pracovní"),
+         dojizdeni = ifelse(commutetime, "Špička", "Mimo špičku")) %>% 
+  group_by(pracovni, timeslots, year, month) %>% 
+  summarise(totalcount = sum(totalcount, na.rm=T)) %>% 
+  mutate(zmena = totalcount/first(totalcount)) %>%
+  ggplot(aes(as.factor(month), totalcount/1000, group = timeslots, colour = timeslots)) +
+    geom_line() +
+    facet_grid(pracovni ~ year)
+
+```
+
+
+```{r Model 1: hourly, all-Prague}
+
+model1d <- csdata %>%
+  group_by(time, year, month, volno, commutetime) %>%
+  summarise(tempprg = mean(tempave, na.rm=T),
+            totalcount = sum(totalcount)) %>% 
+  mutate(dpnk = (month == 5 & volno == F & commutetime == T))
+
+model1dA <- csdata %>%
+  filter(volno == F & commutetime == T) %>% 
+  group_by(time, year, month, volno, commutetime) %>%
+  summarise(tempprg = mean(tempave, na.rm=T),
+            totalcount = sum(totalcount)) %>% 
+  mutate(dpnk = (month == 5)) %>% 
+  arrange(time) %>%
+  ungroup() %>% 
+  mutate(laggedcount = lag(totalcount))
+
+summary(model1d)
+summary(model1dA)
+
+cyklomodel1 <- lm(totalcount ~ tempprg + as.factor(year) + volno + commutetime + dpnk, data = model1d)
+cyklomodel1A <- lm(totalcount ~ tempprg + as.factor(year) + dpnk, data = model1dA)
+cyklomodel1B <- lm(totalcount ~ tempprg + as.factor(year) + dpnk + laggedcount, data = model1dA)
+
+summary(cyklomodel1)
+summary(cyklomodel1A)
+summary(cyklomodel1B)
+
+library(sjPlot)
+sjp.lm(cyklomodel1)
+sjp.lm(cyklomodel1A)
+sjp.lm(cyklomodel1B)
+```
+
+```{r DPNK quasiRDD}
+rdddata <- csdata %>% 
+  filter(!is.na(totalcount) & month %in% c(4:6)) %>%
+  group_by(datum, dayofyear, month, volno, timeslots, year) %>%
+  summarise(totalcount = sum(totalcount),
+            tempprg = mean(tempave))
+
+grpttest <- function(data) {
+  t.test(data$totalcount, data$kveten, alternative = "greater")
+}
+
+rddttest <- rdddata %>%
+  mutate(kveten = month == 5) %>%
+  group_by(year, volno, timeslots, kveten) %>%
+  summarise(meancount = mean(totalcount, na.rm = T)) %>% 
+  spread(kveten, meancount, sep = "_") %>% 
+  mutate(rozdil = kveten_TRUE - kveten_FALSE)
+
+ggplot(rddttest, aes(year, rozdil)) +
+  geom_col() +
+  facet_grid(volno~timeslots)
+  
+rddttest <- rdddata %>%
+  mutate(kveten = month == 5) %>%
+  group_by(year, volno, timeslots) %>%
+  nest() %>% 
+  mutate(ttest = map(data, grpttest),
+         glance = map(ttest, glance)) %>% 
+  unnest(glance) %>% select(-data, -ttest)
+
+ggplot(rdddata, aes(dayofyear, totalcount, group = volno)) + 
+  # geom_line(aes(colour = as.factor(month))) +
+  geom_col(aes(fill=as.factor(month), alpha=-volno/2)) +
+  facet_grid(year~timeslots, scales = "free_x") +
+  scale_alpha_continuous(range = c(0.6,1))
+```
+
+```{r Model 2: adjacent days, daily, all-Prague}
+
+model2d <- csdata %>% 
+  filter(!is.na(totalcount) & month %in% c(4:6)) %>%
+  filter(!volno) %>%
+  mutate(dpnk = (month == 5)) %>% 
+  filter(dayofyear > 110 & dayofyear < 160) %>%
+  group_by(year, dpnk, volno, dayofweek, dayofyear, datum) %>%
+  summarise(totalcount = sum(totalcount),
+            tempprg = mean(tempave, na.rm=T)) %>% 
+  arrange(datum) %>% 
+  group_by(year) %>% 
+  mutate(laggedcount = lag(totalcount))
+
+summary(model2d)
+
+cyklomodel2 <- lm(totalcount ~ tempprg + dpnk + dayofweek + as.factor(year) + laggedcount,
+                  data = model2d)
+
+summary(cyklomodel2, digits=1)
+sjp.lm(cyklomodel2)
+```
+
+
+```{r Model 3: adjacent days, hourly, by place}
+
+model3Ad <- csdata %>%
+  filter(year > 2011 & !is.na(totalcount) & month %in% c(4:6)) %>%
+  mutate(dpnk = (month == 5 & !volno & commutetime)) %>%
+  filter(dayofyear > 105 & dayofyear < 165)
+
+
+model3d <- model3Ad %>% filter(commutetime & !volno)
+
+cyklomodel3 <- lm(totalcount ~ tempave + dpnk + dayofweek,
+                  data = model3d)
+cyklomodel3A <- lm(totalcount ~ tempave + dpnk + dayofweek + commutetime + volno,
+                  data = model3Ad)
+
+summary(cyklomodel3)
+summary(cyklomodel3A)
+
+sjp.lm(cyklomodel3)
+sjp.lm(cyklomodel3A)
+```
+
+```{r Temperature correlation}
+
+ggplot(model3d, aes(tempave, totalcount)) +
+  geom_point() +
+  facet_grid(~dpnk)
+
+ggplot(model2d, aes(tempprg, totalcount)) +
+  geom_point() +
+  facet_grid(~dpnk)
+
+```
+
+```{r Model 4: interpolation at place-hour level}
+
+model4d <- csdata %>% 
+  filter(!is.na(totalcount)) %>% 
+  filter(month %in% c(4,6)) %>%
+  # filter(month != 5) %>% 
+  arrange(date) %>% 
+  mutate(laggedcount = lag(totalcount)) %>% 
+  group_by(misto) %>% 
+  nest()
+
+# summary(model4d)
+
+misto_model <- function(df) {
+  lm(totalcount ~ dayofweek + tempave + svatekvevsedniden + timeslots + laggedcount,
+     data = df)
+}
+  
+model4d <- model4d %>% mutate(model = map(data, misto_model))
+
+# model4d %>%
+#   mutate(glance = map(model, glance)) %>%
+#   unnest(glance)
+
+model4d <- model4d %>%
+  mutate(preds = map2(data, model, add_predictions))
+
+model4dun <- model4d %>% unnest(preds)
+
+model4dun %>% 
+  group_by(date, misto) %>% 
+  summarise(totalcount = sum(totalcount, na.rm=T),
+            pred = sum(pred, na.rm=T)) %>% 
+  ggplot(aes(x = date)) + facet_wrap(~misto) +
+  geom_line(aes(y = pred), colour = "red") +
+  geom_line(aes(y = totalcount), colour = "black", alpha = .5)
+
+# summary(cyklomodel4)
+
+model4Md <- csdata %>% 
+  filter(!is.na(totalcount) & month == 5) %>% 
+  arrange(date) %>% 
+  mutate(laggedcount = lag(totalcount))
+
+testdata <- bind_rows(model4Md, model4dun) %>% 
+  filter(!is.na(tempave) & !is.na(totalcount)) %>% 
+  group_by(misto) %>% 
+  nest() %>% 
+  left_join(model4d %>% select(-data)) %>% 
+  mutate(preds2 = map2(data, model, add_predictions)) %>%
+  unnest(preds2) %>% 
+  mutate(year_day = paste(year, dayofyear, sep="_"))
+  
+testdata_daily <- testdata %>% 
+  group_by(misto, year, volno, datum, date, month, dayofyear, year_day) %>% 
+  summarise(totalcount = sum(totalcount, na.rm=T),
+            pred = sum(pred, na.rm=T))
+
+testdata_daily %>% 
+  # filter(dayofyear > 90 & dayofyear < 200) %>% 
+ggplot(aes(x = dayofyear, group = year)) + 
+  facet_wrap(~year) +
+  geom_line(aes(y = pred), colour = "red") +
+  geom_line(aes(y = totalcount), colour = "black", alpha = .5)
+
+testdata_daily %>% 
+  filter(dayofyear > 90 & dayofyear < 270) %>%
+  group_by(dayofyear, month, year) %>% 
+  summarise(totalcount = sum(totalcount, na.rm=T),
+            pred = sum(pred, na.rm=T)) %>% 
+  ggplot(aes(x = dayofyear, group = year)) + 
+  facet_wrap(~year) +
+  geom_line(aes(y = totalcount, colour = as.factor(month))) +
+  geom_line(aes(y = pred), colour="black")
+  # geom_line(aes(y = totalcount - pred, colour = as.factor(month)))
+
+testdata_dpnk <- testdata %>% 
+  mutate(dpnk = (month == 5 & volno == F)) %>% 
+  group_by(dpnk, misto, year, volno, datum, date, month, dayofyear, year_day) %>%
+  # group_by(dpnk, year, volno, datum, date, month, dayofyear, year_day) %>%
+  filter(dayofyear > 90 & dayofyear < 270) %>%
+  summarise(totalcount = sum(totalcount, na.rm=T),
+            pred = sum(pred, na.rm=T)) %>% 
+  mutate(underprediction = totalcount - pred) 
+
+testdata_dpnk %>% 
+  group_by(dpnk, misto) %>%
+  group_by(dpnk) %>%
+  summarise(meanunderprediction = mean(underprediction, na.rm = T)) %>% 
+  spread(dpnk, meanunderprediction, sep="_") %>% 
+  mutate(impact = dpnk_TRUE - dpnk_FALSE)
+
+t.test(underprediction ~ dpnk, data = testdata_dpnk, alternative = "less")
+
+testdata_dpnk %>% 
+ggplot(aes(x = year_day, group = misto)) + 
+  facet_wrap(~misto) +
+  geom_col(aes(y = underprediction, fill = dpnk))
+  
+```
+
