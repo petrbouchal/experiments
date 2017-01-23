@@ -1,0 +1,30 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(downloader)
+```
+
+```{r}
+schuze1925 <- c(1:213)
+getwd()
+for (schuze in schuze1925) {
+  schuzenumformatted <- formatC(schuze, width = 3, format = "d", flag = "0")
+  url <- paste0("http://www.psp.cz/eknih/1925ns/ps/stenprot/",
+                schuzenumformatted,
+                "schuz/s",
+                schuzenumformatted,
+                "001.htm")
+  filename <- paste0("html_input/schuze",schuzenumformatted, ".html")
+  download(url, filename, mode = "w")
+}
+```
+
+Note: encoding is WIN-1250! (via [W3 validator](https://validator.w3.org/nu/?doc=http%3A%2F%2Fwww.psp.cz%2Feknih%2F1925ns%2Fps%2Fstenprot%2F001schuz%2Fs001001.htm))
+
+
+
+
