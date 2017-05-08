@@ -1,0 +1,31 @@
+<GMLFeatureClassList>
+  <SequentialLayers>false</SequentialLayers>
+  <GMLFeatureClass>
+    <Name>Point</Name>
+    <ElementPath>Point</ElementPath>
+    <GeometryType>100</GeometryType>
+    <DatasetSpecificInfo>
+      <FeatureCount>3</FeatureCount>
+    </DatasetSpecificInfo>
+    <PropertyDefn>
+      <Name>pos</Name>
+      <ElementPath>pos</ElementPath>
+      <Type>String</Type>
+      <Width>21</Width>
+    </PropertyDefn>
+  </GMLFeatureClass>
+  <GMLFeatureClass>
+    <Name>Polygon</Name>
+    <ElementPath>Polygon</ElementPath>
+    <GeometryType>100</GeometryType>
+    <DatasetSpecificInfo>
+      <FeatureCount>129</FeatureCount>
+    </DatasetSpecificInfo>
+    <PropertyDefn>
+      <Name>posList</Name>
+      <ElementPath>exterior|LinearRing|posList</ElementPath>
+      <Type>String</Type>
+      <Width>6247</Width>
+    </PropertyDefn>
+  </GMLFeatureClass>
+</GMLFeatureClassList>
