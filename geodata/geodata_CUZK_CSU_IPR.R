@@ -3,6 +3,7 @@ library(readxl)
 library(foreign)
 library(sf)
 library(leaflet)
+library(plotly)
 library(leaflet.extras)
 
 proper_krovak <- "+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56"
@@ -26,7 +27,7 @@ default_locale() # this is the function for reset
 # http://www.cuzk.cz/Uvod/Produkty-a-sluzby/RUIAN/Volebni-okrsky-v-RUIAN/Volebni-okrsky-v-RUIAN.aspx
 # číselníky všeho ČUZK: http://www.cuzk.cz/Uvod/Produkty-a-sluzby/RUIAN/2-Poskytovani-udaju-RUIAN-ISUI-VDP/Ciselniky-ISUI/Nizsi-uzemni-prvky-a-uzemne-evidencni-jednotky.aspx#UI_ULICE
 
-okrskyP4budovy <- read_excel("~/Documents/Research/Geodata/500119-Praha_4/p4.xlsx") %>% # volební okrsky P4 po budovách
+okrskyP4budovy <- read_excel("~/Documents/Research/Geodata/CUZK_dumps/volebniokrsky/500119-Praha_4/p4.xlsx") %>% # volební okrsky P4 po budovách
   select(sour_x = `Souřadnice X`, sour_y = `Souřadnice Y`, adresa = `Jednořádková adresa`,
          adm = `Kód ADM`, numok = `Číslo volebního okrsku`,
          cdom = `Číslo domovní`, ulice = `Název ulice`) %>% 
@@ -41,10 +42,10 @@ okrskyP4budovy
 
 # Vsechny adresy s lokalizací:
 # http://nahlizenidokn.cuzk.cz/stahniadresnimistaruian.aspx
-adresy_praha <- read_csv2("~/Documents/Research/Geodata/20170331_OB_554782_ADR.csv",
+adresy_praha <- read_csv2("~/Documents/Research/Geodata/CUZK_dumps/adresy/20170430_OB_554782_ADR.csv.gz",
                           locale = locale(encoding = "WINDOWS-1250", decimal_mark = ".")) %>% 
   filter(`Kód části obce` == 490156)
-adresy_vazby_cr <- read_csv2("~/Documents/Research/Geodata/strukturovane-CSV/adresni-mista-vazby-cr.csv",
+adresy_vazby_cr <- read_csv2("~/Documents/Research/Geodata/CUZK_dumps/adresy/strukturovane-CSV/adresni-mista-vazby-cr.csv",
                              locale = locale(encoding = "WINDOWS-1250", decimal_mark = ".")) %>% 
   filter(COBCE_KOD == 490156)
 
@@ -53,6 +54,10 @@ mcP <- st_read("http://opendata.iprpraha.cz/CUR/DTMP/TMMESTSKECASTI_P/S_JTSK/TMM
                crs = proper_krovak)
 mcP <- st_transform(x = mcP, crs = 4326)
 plot(mcP[mcP$NAZEV_MC == "Praha 4",], max.plot = 1)
+
+ggp4 <- ggplot(mcP) + geom_sf(aes(fill = KOD_MC)) + coord_sf(datum = 4326, )
+ggp4
+ggplotly(ggp4, width = 1000, height = 1000)
 
 leaflet() %>%
   setView(lng = 14.4405, lat = 50.08, zoom = 13) %>%
@@ -76,9 +81,13 @@ ggplot(okrCR[okrCR$MomcKod==500119,]) + geom_sf()
 
 # http://vdp.cuzk.cz/vymenny_format/soucasna/20170430_ST_UKSG.xml.gz
 st_layers("~/Documents/Research/Geodata/CUZK_dumps/dump/20170430_ST_UKSG.xml.gz") # hranice, vsechny
-obce <- st_read("~/Documents/Research/Geodata/CUZK_dumps/dump/20170430_ST_UKSG.xml.gz", layer = "Obce",
+obce <- st_read("~/Documents/Research/Geodata/CUZK_dumps/dump/20170430_ST_UKSG.xml.gz", layer = "Okresy",
                 geometry_column = "OriginalniHranice", stringsAsFactors = F,
                 crs = proper_krovak) # hranice, vsechny
+obce$geometry <- obce$GeneralizovaneHranice
+obce <- st_transform(obce, crs = 4326)
+okrgg <- ggplot(obce) + geom_sf()
+ggplotly(okrgg)
 
 # Praha 4: kod obce Praha je 554782 (v datech CSU a CUZK ale ne ve volebnich datech)
 # kod Momc Praha 4 je 500119 (to je i kod zastupitelstva ve volebnich datech)
@@ -98,11 +107,14 @@ obce <- st_read("~/Documents/Research/Geodata/CUZK_dumps/dump/20170430_ST_UKSG.x
 # ale: asi bude užitečnější používat "díl" u ZSJ i u části obce, protože ty kopírují obvod, ne-díly ne.
 # Ale: zdá se, že SO se skládají do ZSJ a do částí obce-dílů, ne do ZSJ-dílů a celých částí obce
 # (protože za celé části obce a za ZSJ-díly CZSO nedá územní strukturu)
+
 # Obvody a okrsky v Praze 4 komunální volby: http://www.praha4.cz/file/k9p1/Informace-o-poctu-a-sidle-volebnich-okrsku-v-mestske-casti-Praha-4-volby-2014.pdf
 # Data lze snad brát odsud: http://apl.czso.cz/irso4/rep1.jsp?kodrep=55 a http://apl.czso.cz/irso4/home.jsp
 # a zobrazit na mapě (možná je tam i WMS)
 # přes fulltext se dá dostat i na jednotlivé budovy
 # Logiku viz na http://apl.czso.cz/irso4/cisel.jsp (jsou tam i volební okrsky!!)
+
+# konverze http://freegis.fsv.cvut.cz/gwiki/RUIAN_/_GDAL 
 
 # http://www.rozhlas.cz/zpravy/data/_zprava/koho-volili-vasi-sousedi-prozkoumejte-nejpodrobnejsi-mapu-s-vysledky-obecnich-voleb--1408350
 # http://www.rozhlas.cz/zpravy/data/_zprava/mapa-zajmu-a-nezajmu-o-komunalni-politiku-volebni-ucast-po-okrscich--1407435
@@ -115,18 +127,24 @@ obce <- st_read("~/Documents/Research/Geodata/CUZK_dumps/dump/20170430_ST_UKSG.x
 
 # Error described here: http://stackoverflow.com/questions/43656351/st-read-error-null-pointer-returned-by-getgeomfieldref
 
-st_layers("~/Documents/Research/Geodata/20170430_OB_554782_UKSH.xml") # megadump CUZK, jen Praha, kompletni
-katuzP <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UKSH.xml", layer = "KatastralniUzemi", geometry_column = 1) # nefunguje
-katuzP <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UZSZ.xml", layer = "KatastralniUzemi", geometry_column = 1) # nefunguje
-ulice2 <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UZSZ.xml", layer = "AdresniMista") # nefunguje
-ulice1 <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UKSH.xml", layer = "Ulice") # nefunguje
-obceP <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UKSH.xml", layer = "Obce", geometry_column = "GeneralizovaneHranice") # nefunguje
-adresyP <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UZSZ.xml", layer = "AdresniMista", promote_to_multi = F) # nefunguje
-stavbyP <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UKSH.xml", layer = "StavebniObjekty") # nefunguje
-uliceP_lines <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UKSH.xml", layer = "Ulice") # funguje
-uliceP_lines <- st_transform(uliceP_lines, 4326)
-castiObci <- st_read("~/Documents/Research/Geodata/20170430_OB_554782_UKSH.xml", layer = "CastiObci") # funguje
-st_layers("~/Documents/Research/Geodata/hh/Parcely.shp")
+prahadump <- "~/Documents/Research/Geodata/CUZK_dumps/dump/20170630_OB_554782_UKSH.xml.gz" 
+
+st_layers(prahadump) # megadump CUZK, jen Praha, kompletni
+katuzP <- st_read(prahadump, layer = "KatastralniUzemi", geometry_column = 1) # funguje
+ulice1 <- st_read(prahadump, layer = "Ulice") # funguje
+ulice1 <- st_transform(ulice1, 4326)
+obceP <- st_read(prahadump, layer = "Obce", geometry_column = "GeneralizovaneHranice") # funguje
+zsjP <- st_read(prahadump, layer = "Zsj") # funguje
+momcP <- st_read(prahadump, layer = "Momc") # funguje
+mopP <- st_read(prahadump, layer = "Mop") # funguje
+spravniobvodyP <- st_read(prahadump, layer = "SpravniObvody") # funguje
+castiobciP <- st_read(prahadump, layer = "CastiObci") # funguje
+adrmista <- st_read(prahadump, layer = "AdresniMista") # funguje
+stavbyP <- st_read(prahadump, layer = "StavebniObjekty") # nefunguje sf 0.5-4
+parcelyP <- st_read(prahadump, layer = "Parcely") # nefunguje sf 0.5-4
+
+stavbyP2 <- st_read("~/Downloads/Praha_stavby.shp")
+parcelyP2 <- st_read("~/Downloads/Praha_parcely.shp")
 
 adresniMista <- read_csv("~/Documents/Research/Geodata/AdresniMista.csv") %>% # exported by QGIS, works
   filter(!is.na(X) & !is.na(Y)) %>% 
@@ -142,10 +160,6 @@ stavebniObjekty <- read_csv("~/Documents/Research/Geodata/AdresniMista.csv") %>%
 
 ggplot(adresniMista) + geom_sf()
 
-zsjP <- st_read("~/Documents/Research/Geodata/20170331_OB_554782_UKSH.xml", layer = "Zsj") # funguje
-st_geometry(zsjP) <- "OriginalniHranice"
-zsjP <- st_transform(zsjP, crs = 4326)
-
 leaflet() %>%
   setView(lng = 14.4405, lat = 50.08, zoom = 13) %>%
   addTiles(options = tileOptions(detectRetina = T)) %>%
@@ -159,7 +173,7 @@ leaflet() %>%
   suspendScroll()
 
 
-zsjP4_csu <- read.dbf("~/Documents/Research/Geodata/CIS53.dbf") # data o ZSJ z CSU, jen P4 - ale malo, jen 100 (asi OK?)
+zsjP4_csu <- read.dbf("~/Documents/Research/Geodata/CSU/CIS53.dbf") # data o castech obci z CSU, jen P4 - ale malo, jen 100 (asi OK?)
 zsjP4_csu <- read.dbf("~/Documents/Research/Geodata/CIS47_latin852.dbf") # data o stat. obvodech z CSU, jen P4
 statobvodyP4 <- read.dbf("~/Documents/Research/Geodata/CIS55.dbf") # data o stat. obvodech z CSU, jen P4
 sovazbyCR <- read.dbf("~/Documents/Research/Geodata/SO_VAZBY.dbf") # data o stat obvodech z CSU, cela CR
@@ -205,3 +219,5 @@ leaflet() %>%
   addCircleMarkers(data = recykly, stroke = F, radius = 6, fillColor = ~paleta(as.factor(TRASHTYPENAME)),
                    fillOpacity = 0.4) %>% 
   addLegend(pal = paleta(~as.factor(TRASHTYPENAME)), values)
+
+# try plotly with frame argument and ggplot + geom_sf to animate map?
