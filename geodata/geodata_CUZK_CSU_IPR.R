@@ -124,6 +124,7 @@ ggplotly(okrgg)
 # Odkaz z http://www.cuzk.cz/Uvod/Produkty-a-sluzby/RUIAN/Volebni-okrsky-v-RUIAN/Volebni-okrsky-v-RUIAN.aspx
 
 # Howto on managing multiple geometries: http://freegis.fsv.cvut.cz/gwiki/RUIAN_/_Ruian2gis
+# a http://freegis.fsv.cvut.cz/gwiki/RUIAN_/_GDAL
 
 # Error described here: http://stackoverflow.com/questions/43656351/st-read-error-null-pointer-returned-by-getgeomfieldref
 
